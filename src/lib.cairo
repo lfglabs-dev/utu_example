@@ -1,6 +1,6 @@
 mod pk_script;
 mod merkle_root;
-
+use utu_relay::bitcoin::block::BlockHeader;
 use starknet::ContractAddress;
 use consensus::{types::transaction::Transaction};
 use utils::hash::Digest;
@@ -12,6 +12,7 @@ pub trait IBitcoinDepositor<TContractState> {
         ref self: TContractState,
         deposit_tx: Transaction,
         output_id: usize,
+        block_header: BlockHeader,
         tx_inclusion: Array<(Digest, bool)>
     );
     fn get_depositor(self: @TContractState) -> ContractAddress;
@@ -19,8 +20,10 @@ pub trait IBitcoinDepositor<TContractState> {
 
 #[starknet::contract]
 mod BitcoinDepositor {
+    use utu_relay::bitcoin::block::BlockHashTrait;
     use starknet::{ContractAddress, get_caller_address};
     use consensus::{codec::Encode, types::transaction::Transaction};
+    use utu_relay::bitcoin::block::BlockHeader;
     use utils::{hash::Digest, double_sha256::double_sha256_byte_array};
     use core::num::traits::Zero;
     use crate::{pk_script::extract_p2pkh_target, merkle_root::compute_merkle_root};
@@ -36,6 +39,7 @@ mod BitcoinDepositor {
             ref self: ContractState,
             deposit_tx: Transaction,
             output_id: usize,
+            block_header: BlockHeader,
             tx_inclusion: Array<(Digest, bool)>
         ) {
             assert(self.depositor.read() == Zero::zero(), 'too late, someone deposited');
@@ -57,7 +61,11 @@ mod BitcoinDepositor {
             let tx_bytes_legacy = @deposit_tx.encode();
             let txid = double_sha256_byte_array(tx_bytes_legacy);
             let merkle_root = compute_merkle_root(txid, tx_inclusion);
-            println!("merkle_root: {}", merkle_root);
+            assert(
+                block_header.merkle_root_hash.value == merkle_root.value, 'invalid inclusion proof'
+            );
+            let block_hash = block_header.hash();
+            println!("block_hash: {}", block_hash);
 
             // if all good, we update the receiver
             self.depositor.write(get_caller_address());

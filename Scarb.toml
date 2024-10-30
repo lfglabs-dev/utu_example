@@ -9,6 +9,7 @@ edition = "2023_11"
 starknet = "2.8.4"
 utils = { git = "https://github.com/keep-starknet-strange/raito.git" }
 consensus = { git = "https://github.com/keep-starknet-strange/raito.git" }
+utu_relay = { git = "https://github.com/lfglabs-dev/utu_relay.git", rev = "fc55cf8f514f6d30baea7830d9e0874915513059" }
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.31.0" }

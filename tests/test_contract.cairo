@@ -7,6 +7,7 @@ use snforge_std::{
 use utu_example::{IBitcoinDepositorDispatcher, IBitcoinDepositorDispatcherTrait};
 use consensus::{types::transaction::{Transaction, TxIn, TxOut, OutPoint}};
 use utils::hex::{from_hex, hex_to_hash_rev};
+use utu_relay::{utils::hash::Digest, bitcoin::block::BlockHeaderTrait};
 
 fn deploy_contract(name: ByteArray) -> IBitcoinDepositorDispatcher {
     let contract = declare(name).unwrap().contract_class();
@@ -109,7 +110,31 @@ fn test_deposit() {
             false
         ),
     ];
-    bitcoin_depositor.prove_deposit(tx, 1, siblings);
+    bitcoin_depositor
+        .prove_deposit(
+            tx,
+            1,
+            BlockHeaderTrait::new(
+                1_u32,
+                Digest {
+                    value: hex_to_hash_rev(
+                        "00000000000006d414b6c22492b1cc5fb56d42645616efe049f3aad7fa589de4"
+                    )
+                        .value
+                },
+                Digest {
+                    value: hex_to_hash_rev(
+                        "a25a937478ca5f18e77aef1cdb9e69e347288248411253faefcd04d90b4c9380"
+                    )
+                        .value
+                },
+                1319128988,
+                0x1a0b6d4b_u32,
+                0xd8a6702c,
+            ),
+            siblings
+        );
+
     let depositor_after = bitcoin_depositor.get_depositor();
     assert(depositor_after == caller, 'Invalid depositor');
     stop_cheat_caller_address_global();
