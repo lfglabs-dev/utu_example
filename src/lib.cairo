@@ -12,7 +12,7 @@ pub trait IBitcoinDepositor<TContractState> {
         ref self: TContractState,
         deposit_tx: Transaction,
         output_id: usize,
-        tx_inclusion: Span<(Digest, bool)>
+        tx_inclusion: Array<(Digest, bool)>
     );
     fn get_depositor(self: @TContractState) -> ContractAddress;
 }
@@ -20,10 +20,10 @@ pub trait IBitcoinDepositor<TContractState> {
 #[starknet::contract]
 mod BitcoinDepositor {
     use starknet::{ContractAddress, get_caller_address};
-    use consensus::types::transaction::Transaction;
-    use utils::hash::Digest;
+    use consensus::{codec::Encode, types::transaction::Transaction};
+    use utils::{hash::Digest, double_sha256::double_sha256_byte_array};
     use core::num::traits::Zero;
-    use crate::pk_script::extract_p2pkh_target;
+    use crate::{pk_script::extract_p2pkh_target, merkle_root::compute_merkle_root};
 
     #[storage]
     struct Storage {
@@ -36,7 +36,7 @@ mod BitcoinDepositor {
             ref self: ContractState,
             deposit_tx: Transaction,
             output_id: usize,
-            tx_inclusion: Span<(Digest, bool)>
+            tx_inclusion: Array<(Digest, bool)>
         ) {
             assert(self.depositor.read() == Zero::zero(), 'too late, someone deposited');
 
@@ -48,9 +48,16 @@ mod BitcoinDepositor {
 
             // we verify this is a P2PKH and we are the receiver
             assert(
-                extract_p2pkh_target(*output_to_check.pk_script) == "1NpDmDPRJX1yoke5qhrUQBKBByWqFSQ17A",
+                extract_p2pkh_target(
+                    *output_to_check.pk_script
+                ) == "1NpDmDPRJX1yoke5qhrUQBKBByWqFSQ17A",
                 'wrong receiver'
             );
+
+            let tx_bytes_legacy = @deposit_tx.encode();
+            let txid = double_sha256_byte_array(tx_bytes_legacy);
+            let merkle_root = compute_merkle_root(txid, tx_inclusion);
+            println!("merkle_root: {}", merkle_root);
 
             // if all good, we update the receiver
             self.depositor.write(get_caller_address());

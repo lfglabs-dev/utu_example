@@ -95,8 +95,21 @@ fn test_deposit() {
         lock_time: 0
     };
 
-    let inclusion_proof = array![];
-    bitcoin_depositor.prove_deposit(tx, 1, inclusion_proof.span());
+    let siblings = array![
+        (hex_to_hash_rev("8bfa0f7edb3caa2a3e8e028cf5fa196d078e6f9d7b9f2699f79f28bb181f8566"), true),
+        (hex_to_hash_rev("8a5d61f4ba10158897cce12d0224112e7471c001ff787cd0678b9283140a6bc6"), true),
+        (hex_to_hash_rev("c2c314fd9e672b70e9b8463a542fbc97400e3bed8702ebf0227d9725e7a8a120"), true),
+        (
+            hex_to_hash_rev("568eaa8a3c36b3123abc0d28fbc9a6db7bbf8f42158d44e3b747762354378dda"),
+            false
+        ),
+        (hex_to_hash_rev("2675bcd84c5bcb94ead1ffc9986f7c011bac7fc9af3504d9769a949a76ae9026"), true),
+        (
+            hex_to_hash_rev("81c29c6d2d2841c1230817a968e1260185f064131dbbbd415be570e55582b097"),
+            false
+        ),
+    ];
+    bitcoin_depositor.prove_deposit(tx, 1, siblings);
     let depositor_after = bitcoin_depositor.get_depositor();
     assert(depositor_after == caller, 'Invalid depositor');
     stop_cheat_caller_address_global();
