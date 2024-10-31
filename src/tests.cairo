@@ -6,9 +6,9 @@ use snforge_std::{
 };
 use utu_example::{IBitcoinDepositorDispatcher, IBitcoinDepositorDispatcherTrait};
 use consensus::{types::transaction::{Transaction, TxIn, TxOut, OutPoint}};
-use utils::hex::{from_hex, hex_to_hash_rev};
+use utils::{hex::{from_hex, hex_to_hash_rev}, hash::DigestImpl};
 use utu_relay::{
-    interfaces::{IUtuRelayDispatcher, IUtuRelayDispatcherTrait, HeightProof}, utils::hash::Digest,
+    interfaces::{IUtuRelayDispatcher, IUtuRelayDispatcherTrait, HeightProof},
     bitcoin::block::{BlockHeaderTrait, BlockHashImpl}
 };
 
@@ -117,18 +117,12 @@ fn test_deposit() {
 
     let block_868239 = BlockHeaderTrait::new(
         744677376_u32, // version (0x2c62e000)
-        Digest {
-            value: hex_to_hash_rev(
-                "00000000000000000001f9fb950ed8f038fd2cc7330de564ba35c30fc5a7683e"
-            )
-                .value
-        }, // prev_block_hash
-        Digest {
-            value: hex_to_hash_rev(
-                "178d1d365faba2ca73698bce4bd4abf69a19b56047c910c00ac403d3bfe9c31f"
-            )
-                .value
-        }, // merkle_root_hash
+        hex_to_hash_rev(
+            "00000000000000000001f9fb950ed8f038fd2cc7330de564ba35c30fc5a7683e"
+        ), // prev_block_hash
+        hex_to_hash_rev(
+            "178d1d365faba2ca73698bce4bd4abf69a19b56047c910c00ac403d3bfe9c31f"
+        ), // merkle_root_hash
         1730373503_u32, // time
         0x1702f128_u32, // bits
         3748435122_u32, // nonce
@@ -139,78 +133,18 @@ fn test_deposit() {
     );
 
     let merkle_branch = [
-        Digest {
-            value: hex_to_hash_rev(
-                "fa89c32152bf324cd1d47d48187f977c7e0f380f6f78132c187ce27923f62fcc"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "c15911a240d89d1c8a573076e196430ceda007876ca90c519e4a7f6ff79739e0"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "2d8485381c1c75e7cc1c52b069624a8af7fd0e5e981b2d9ea61ed38e774a9f20"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "8fb144635252fd1be34ef99355fdd2fa2c78e625faf746f66ad10af5a21b7a5c"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "849bff3bc184ae0df0b3d3bb560a68186cb711eb3a83dbfa890a4e6cc2487a47"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "c3e238ef8453b701b200ad05c5fbf88e2928589be3a3808687e1e2dd3d540170"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "82efe04d29ce3f27e71df0d496b24ec420b193d38e6e2c6b9dc126c08aad31cf"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "749d481a6c62fb88d3cf7a768cc50bbc02e8968d5e1151222ee939c87b4ade7c"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "f22343dd5c840c82a12afb0f0961dfebd73f568783cdfb5d9bd7531095922b04"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "3a23346a49a08e95cca72b16f93bb92aa115e66343b8ca58deba4fe02f52c397"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "c05714916a7088e105377682944fc1d04c295c378b560f2a643a2a584a706b98"
-            )
-                .value
-        },
-        Digest {
-            value: hex_to_hash_rev(
-                "0e962a3c3aa944fa042e035851b2aa3c2c4a5173344684e7c2291ead8940a2b7"
-            )
-                .value
-        }
+        hex_to_hash_rev("fa89c32152bf324cd1d47d48187f977c7e0f380f6f78132c187ce27923f62fcc"),
+        hex_to_hash_rev("c15911a240d89d1c8a573076e196430ceda007876ca90c519e4a7f6ff79739e0"),
+        hex_to_hash_rev("2d8485381c1c75e7cc1c52b069624a8af7fd0e5e981b2d9ea61ed38e774a9f20"),
+        hex_to_hash_rev("8fb144635252fd1be34ef99355fdd2fa2c78e625faf746f66ad10af5a21b7a5c"),
+        hex_to_hash_rev("849bff3bc184ae0df0b3d3bb560a68186cb711eb3a83dbfa890a4e6cc2487a47"),
+        hex_to_hash_rev("c3e238ef8453b701b200ad05c5fbf88e2928589be3a3808687e1e2dd3d540170"),
+        hex_to_hash_rev("82efe04d29ce3f27e71df0d496b24ec420b193d38e6e2c6b9dc126c08aad31cf"),
+        hex_to_hash_rev("749d481a6c62fb88d3cf7a768cc50bbc02e8968d5e1151222ee939c87b4ade7c"),
+        hex_to_hash_rev("f22343dd5c840c82a12afb0f0961dfebd73f568783cdfb5d9bd7531095922b04"),
+        hex_to_hash_rev("3a23346a49a08e95cca72b16f93bb92aa115e66343b8ca58deba4fe02f52c397"),
+        hex_to_hash_rev("c05714916a7088e105377682944fc1d04c295c378b560f2a643a2a584a706b98"),
+        hex_to_hash_rev("0e962a3c3aa944fa042e035851b2aa3c2c4a5173344684e7c2291ead8940a2b7")
     ].span();
     let height_proof = Option::Some(
         HeightProof { header: block_868239, coinbase_raw_tx, merkle_branch }

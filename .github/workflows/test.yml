@@ -1,0 +1,31 @@
+name: CI Tests
+
+on: [push, pull_request, pull_request_target]
+
+env:
+  SCARB_VERSION: 2.8.4
+
+jobs:
+  scarb-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install scarb
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh -s -- -v $SCARB_VERSION
+
+      - name: Install Starknet Foundry
+        run: |
+          curl -L https://raw.githubusercontent.com/foundry-rs/starknet-foundry/master/scripts/install.sh | sh
+          export PATH="$PATH:$HOME/.local/bin"
+          snfoundryup
+
+      - name: Install project dependencies
+        run: scarb fetch
+
+      - name: Compile smart contracts
+        run: scarb build
+
+      - name: Run scarb tests
+        run: scarb test -p utu_example
