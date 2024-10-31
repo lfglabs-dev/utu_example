@@ -65,25 +65,22 @@ mod BitcoinDepositor {
             // we verify this is a P2PKH and we are the receiver
             let tx_bytes_legacy = @deposit_tx.encode();
             let txid = double_sha256_byte_array(tx_bytes_legacy);
-            println!("txid: {}", txid);
-
             let target = extract_p2pkh_target(*output_to_check.pk_script);
-            println!("target: {}", target);
 
-            println!("yolo");
+            assert(target == "1LgXWxpELt2o9hPGiwqDT1B5Z7994MQPTN", 'wrong receiver');
 
-            // assert(target == "1LgXWxpELt2o9hPGiwqDT1B5Z7994MQPTN", 'wrong receiver');
-
+            // we verify this tx is included in the provided block
             let merkle_root = compute_merkle_root(txid, tx_inclusion);
             assert(
                 block_header.merkle_root_hash.value == merkle_root.value, 'invalid inclusion proof'
             );
-            let block_digest = block_header.hash();
-            println!("block_digest: {}", block_digest);
-
+            // we verify this block is part of the canonical chain
             let utu = IUtuRelayDispatcher { contract_address: self.utu_address.read() };
             let canonical_block_digest = utu.get_block(block_height);
-            assert(canonical_block_digest == block_digest, 'invalid block digest');
+            assert(canonical_block_digest == block_header.hash(), 'invalid block digest');
+
+            // in case we want to check the status
+            // let block_status = utu.get_status(canonical_block_digest);
 
             // if all good, we update the receiver
             self.depositor.write(get_caller_address());
