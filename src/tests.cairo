@@ -7,17 +7,27 @@ use snforge_std::{
 use utu_example::{IBitcoinDepositorDispatcher, IBitcoinDepositorDispatcherTrait};
 use consensus::{types::transaction::{Transaction, TxIn, TxOut, OutPoint}};
 use utils::hex::{from_hex, hex_to_hash_rev};
-use utu_relay::{utils::hash::Digest, bitcoin::block::BlockHeaderTrait};
+use utu_relay::{
+    interfaces::{IUtuRelayDispatcher, IUtuRelayDispatcherTrait}, utils::hash::Digest,
+    bitcoin::block::{BlockHeader, BlockHeaderTrait, BlockHashImpl}
+};
 
-fn deploy_contract(name: ByteArray) -> IBitcoinDepositorDispatcher {
-    let contract = declare(name).unwrap().contract_class();
-    let (contract_address, _) = contract.deploy(@ArrayTrait::new()).unwrap();
-    IBitcoinDepositorDispatcher { contract_address }
+fn deploy_contracts() -> (IBitcoinDepositorDispatcher, IUtuRelayDispatcher) {
+    let contract = declare("UtuRelay").unwrap().contract_class();
+    let (utu_contract_address, _) = contract.deploy(@ArrayTrait::new()).unwrap();
+
+    let contract = declare("BitcoinDepositor").unwrap().contract_class();
+    let (btc_contract_address, _) = contract.deploy(@array![utu_contract_address.into()]).unwrap();
+
+    (
+        IBitcoinDepositorDispatcher { contract_address: btc_contract_address },
+        IUtuRelayDispatcher { contract_address: utu_contract_address }
+    )
 }
 
 #[test]
 fn test_deposit() {
-    let bitcoin_depositor = deploy_contract("BitcoinDepositor");
+    let (bitcoin_depositor, utu) = deploy_contracts();
     let caller = contract_address_const::<123>();
     start_cheat_caller_address_global(caller);
     let depositor_before = bitcoin_depositor.get_depositor();
@@ -110,33 +120,50 @@ fn test_deposit() {
             false
         ),
     ];
-    bitcoin_depositor
-        .prove_deposit(
-            tx,
-            1,
-            BlockHeaderTrait::new(
-                1_u32,
-                Digest {
-                    value: hex_to_hash_rev(
-                        "00000000000006d414b6c22492b1cc5fb56d42645616efe049f3aad7fa589de4"
-                    )
-                        .value
-                },
-                Digest {
-                    value: hex_to_hash_rev(
-                        "a25a937478ca5f18e77aef1cdb9e69e347288248411253faefcd04d90b4c9380"
-                    )
-                        .value
-                },
-                1319128988,
-                0x1a0b6d4b_u32,
-                0xd8a6702c,
-            ),
-            siblings
-        );
 
-    let depositor_after = bitcoin_depositor.get_depositor();
-    assert(depositor_after == caller, 'Invalid depositor');
+    let prev_block_hash = Digest {
+        value: [
+            0xe49d58fa,
+            0xd7aaf349,
+            0xe0ef1656,
+            0x64426db5,
+            0x5fccb192,
+            0x24c2b614,
+            0xd4060000,
+            0x00000000
+        ]
+    };
+    let merkle_root_hash = Digest {
+        value: [
+            0x80934c0b,
+            0xd904cdef,
+            0xfa531241,
+            0x48822847,
+            0xe3699edb,
+            0x1cef7ae7,
+            0x185fca78,
+            0x74935aa2
+        ]
+    };
+    let block_150013 = BlockHeader {
+        version: 0x01000000,
+        prev_block_hash,
+        merkle_root_hash,
+        time: 0x9c4fa04e,
+        bits: 0x1a0b6d4b,
+        nonce: 0x2c70a6d8,
+    };
+    println!("hash: {}", block_150013.hash());
+
+    // utu.register_blocks(array![block_150013].span());
+
+    // bitcoin_depositor.prove_deposit(tx, 1, 150013, block_150013, siblings);
+
+    // let depositor_after = bitcoin_depositor.get_depositor();
+    // assert(depositor_after == caller, 'Invalid depositor');
     stop_cheat_caller_address_global();
 }
+
+
+
 

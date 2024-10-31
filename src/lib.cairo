@@ -1,10 +1,12 @@
 mod pk_script;
 mod merkle_root;
-use utu_relay::bitcoin::block::BlockHeader;
+#[cfg(test)]
+mod tests;
+
 use starknet::ContractAddress;
 use consensus::{types::transaction::Transaction};
 use utils::hash::Digest;
-
+use utu_relay::bitcoin::block::BlockHeader;
 
 #[starknet::interface]
 pub trait IBitcoinDepositor<TContractState> {
@@ -12,6 +14,7 @@ pub trait IBitcoinDepositor<TContractState> {
         ref self: TContractState,
         deposit_tx: Transaction,
         output_id: usize,
+        block_height: u64,
         block_header: BlockHeader,
         tx_inclusion: Array<(Digest, bool)>
     );
@@ -20,17 +23,25 @@ pub trait IBitcoinDepositor<TContractState> {
 
 #[starknet::contract]
 mod BitcoinDepositor {
+    use crate::{pk_script::extract_p2pkh_target, merkle_root::compute_merkle_root};
     use utu_relay::bitcoin::block::BlockHashTrait;
     use starknet::{ContractAddress, get_caller_address};
     use consensus::{codec::Encode, types::transaction::Transaction};
-    use utu_relay::bitcoin::block::BlockHeader;
     use utils::{hash::Digest, double_sha256::double_sha256_byte_array};
     use core::num::traits::Zero;
-    use crate::{pk_script::extract_p2pkh_target, merkle_root::compute_merkle_root};
+    use utu_relay::{
+        interfaces::{IUtuRelayDispatcher, IUtuRelayDispatcherTrait}, bitcoin::block::BlockHeader
+    };
 
     #[storage]
     struct Storage {
         depositor: ContractAddress,
+        utu_address: ContractAddress,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, utu_address: ContractAddress) {
+        self.utu_address.write(utu_address);
     }
 
     #[abi(embed_v0)]
@@ -39,6 +50,7 @@ mod BitcoinDepositor {
             ref self: ContractState,
             deposit_tx: Transaction,
             output_id: usize,
+            block_height: u64,
             block_header: BlockHeader,
             tx_inclusion: Array<(Digest, bool)>
         ) {
@@ -64,8 +76,12 @@ mod BitcoinDepositor {
             assert(
                 block_header.merkle_root_hash.value == merkle_root.value, 'invalid inclusion proof'
             );
-            let block_hash = block_header.hash();
-            println!("block_hash: {}", block_hash);
+            let block_digest = block_header.hash();
+            println!("block_digest: {}", block_digest);
+
+            let utu = IUtuRelayDispatcher { contract_address: self.utu_address.read() };
+            let canonical_block_digest = utu.get_block(block_height);
+            assert(canonical_block_digest == block_digest, 'invalid block digest');
 
             // if all good, we update the receiver
             self.depositor.write(get_caller_address());

@@ -17,6 +17,7 @@ assert_macros = "2.8.4"
 
 [[target.starknet-contract]]
 sierra = true
+build-external-contracts = ["utu_relay::utu_relay::UtuRelay"]
 
 [scripts]
 test = "snforge test"
