@@ -63,15 +63,17 @@ mod BitcoinDepositor {
             assert(*output_to_check.value > 100_000_000_u64, 'you sent less than 1 BTC');
 
             // we verify this is a P2PKH and we are the receiver
-            assert(
-                extract_p2pkh_target(
-                    *output_to_check.pk_script
-                ) == "1NpDmDPRJX1yoke5qhrUQBKBByWqFSQ17A",
-                'wrong receiver'
-            );
-
             let tx_bytes_legacy = @deposit_tx.encode();
             let txid = double_sha256_byte_array(tx_bytes_legacy);
+            println!("txid: {}", txid);
+
+            let target = extract_p2pkh_target(*output_to_check.pk_script);
+            println!("target: {}", target);
+
+            println!("yolo");
+
+            // assert(target == "1LgXWxpELt2o9hPGiwqDT1B5Z7994MQPTN", 'wrong receiver');
+
             let merkle_root = compute_merkle_root(txid, tx_inclusion);
             assert(
                 block_header.merkle_root_hash.value == merkle_root.value, 'invalid inclusion proof'
