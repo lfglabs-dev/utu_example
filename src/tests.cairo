@@ -2,7 +2,7 @@ use starknet::contract_address_const;
 use core::num::traits::Zero;
 use snforge_std::{
     declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address_global,
-    stop_cheat_caller_address_global
+    stop_cheat_caller_address_global, start_cheat_block_timestamp
 };
 use utu_example::{IBitcoinDepositorDispatcher, IBitcoinDepositorDispatcherTrait};
 use consensus::{types::transaction::{Transaction, TxIn, TxOut, OutPoint}};
@@ -152,6 +152,8 @@ fn test_deposit() {
 
     utu.register_blocks(array![block_868239].span());
     utu.update_canonical_chain(868239, 868239, block_868239.hash(), height_proof);
+    // we try to prove the deposit one hour after the actual block time
+    start_cheat_block_timestamp(bitcoin_depositor.contract_address, 1_730_373_503 + 3600);
     bitcoin_depositor.prove_deposit(tx, 0, 868239, block_868239, siblings);
 
     // let depositor_after = bitcoin_depositor.get_depositor();

@@ -25,9 +25,9 @@ pub trait IBitcoinDepositor<TContractState> {
 mod BitcoinDepositor {
     use crate::{pk_script::extract_p2pkh_target, merkle_root::compute_merkle_root};
     use utu_relay::bitcoin::block::BlockHashTrait;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use consensus::{codec::Encode, types::transaction::Transaction};
-    use utils::{hash::Digest, double_sha256::double_sha256_byte_array};
+    use utils::{hash::Digest, double_sha256::double_sha256_byte_array, numeric::u32_byte_reverse};
     use core::num::traits::Zero;
     use utu_relay::{
         interfaces::{IUtuRelayDispatcher, IUtuRelayDispatcherTrait}, bitcoin::block::BlockHeader
@@ -79,6 +79,9 @@ mod BitcoinDepositor {
             // sufficient pow for our usecase: 100 sextillion expected hashes
             let utu = IUtuRelayDispatcher { contract_address: self.utu_address.read() };
             utu.assert_safe(block_height, block_header.hash(), 100_000_000_000_000_000_000_000, 0);
+            // we ensure this block was not premined
+            let block_time = u32_byte_reverse(block_header.time).into();
+            assert(block_time <= get_block_timestamp(), 'Block comes from the future.');
 
             // if all good, we update the receiver
             self.depositor.write(get_caller_address());
