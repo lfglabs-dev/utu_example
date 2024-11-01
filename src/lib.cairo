@@ -74,13 +74,11 @@ mod BitcoinDepositor {
             assert(
                 block_header.merkle_root_hash.value == merkle_root.value, 'invalid inclusion proof'
             );
-            // we verify this block is part of the canonical chain
-            let utu = IUtuRelayDispatcher { contract_address: self.utu_address.read() };
-            let canonical_block_digest = utu.get_block(block_height);
-            assert(canonical_block_digest == block_header.hash(), 'invalid block digest');
 
-            // in case we want to check the status
-            // let block_status = utu.get_status(canonical_block_digest);
+            // we verify this block is safe to use (part of the canonical chain & sufficient pow)
+            // sufficient pow for our usecase: 100 sextillion expected hashes
+            let utu = IUtuRelayDispatcher { contract_address: self.utu_address.read() };
+            utu.assert_safe(block_height, block_header.hash(), 100_000_000_000_000_000_000_000, 0);
 
             // if all good, we update the receiver
             self.depositor.write(get_caller_address());

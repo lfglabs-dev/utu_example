@@ -7,9 +7,9 @@ edition = "2023_11"
 
 [dependencies]
 starknet = "2.8.4"
-utils = { git = "https://github.com/keep-starknet-strange/raito.git" }
-consensus = { git = "https://github.com/keep-starknet-strange/raito.git" }
-utu_relay = { git = "https://github.com/lfglabs-dev/utu_relay.git" }
+utils = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "02a13045b7074ae2b3247431cd91f1ad76263fb2" }
+consensus = { git = "https://github.com/keep-starknet-strange/raito.git", rev = "02a13045b7074ae2b3247431cd91f1ad76263fb2" }
+utu_relay = { git = "https://github.com/lfglabs-dev/utu_relay.git", rev = "80dd830" }
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.31.0" }
