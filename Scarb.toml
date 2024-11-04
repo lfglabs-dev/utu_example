@@ -16,9 +16,11 @@ snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v
 assert_macros = "2.8.4"
 
 [[target.starknet-contract]]
+casm = true
 sierra = true
 allowed-libfuncs-list.name = "experimental"
 build-external-contracts = ["utu_relay::utu_relay::UtuRelay"]
+casm-add-pythonic-hints = true
 
 [scripts]
 test = "snforge test"
